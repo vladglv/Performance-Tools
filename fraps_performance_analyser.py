@@ -1,7 +1,8 @@
 """
-Author      : Vlad Glv, 2016
+Author      :   Vlad Glv, 2016
 Revision    :   1.0, Basic tool to analyze frame times and their consistency
                 1.1, Migration to Python 3.x
+                1.2, Improved coding style
 """
 # Requires Python 3.5.1
 
@@ -15,7 +16,7 @@ import sys
 Syntax_Help = """{0} fraps_frametimes_csv stutter_margin=2.0 [ms]
 log_out_file_name=stdout'"""
 
-# Range for accepted stutter margin values
+# Range of accepted stutter margin values
 Stutter_Margin_Min = 0.10
 Stutter_Margin_Max = 10.1
 
@@ -31,7 +32,7 @@ SR_Min = 0.124
 # Maximum percentage of frames producing stutter
 SR_Max = 100.1
 
-# Verbal rating for percentage
+# Verbal rating for percentage of smooth frames
 SR_Verbal = [
     'Practically Impossible',
     'Perfect',
@@ -46,7 +47,7 @@ SR_Verbal = [
 ]
 
 
-# Returns the extension of ss or otherwise ss itself
+# Returns the extension of 'ss' or 'ss' otherwise
 def remove_extension(ss: str) -> str:
     try:
         return ss[0:ss.rindex('.')]
@@ -54,7 +55,7 @@ def remove_extension(ss: str) -> str:
         return ss
 
 
-# Returns the extension of ss or otherwise an empty string
+# Returns the extension of 'ss' or an empty string otherwise
 def get_extension(ss: str) -> str:
     try:
         return ss[ss.rindex('.') + 1:]
@@ -62,20 +63,20 @@ def get_extension(ss: str) -> str:
         return ''
 
 
-# Returns a string representing the reformatted float
+# Returns a string representing the reformatted float 'f' with 'n' digits
 def fixed_precision(f: float, n: int) -> str:
     fmt = '{1}:.{0}f{2}'.format(n, '{', '}')
     return fmt.format(f)
 
 
-# Clamps the value between min_value and max_value
+# Clamps the value between 'min_value' and 'max_value'
 def clamp(value, min_value, max_value):
     assert min_value <= max_value
 
     return max(min(value, max_value), min_value)
 
 
-# Binary select on expr between true_ and false_ and return the result
+# Binary select on 'expr' between 'true_' and 'false_' and return the result
 def binary_select1(expr, true_, false_):
     if expr:
         return true_
@@ -90,6 +91,11 @@ def moving_average(avg: float, x: float, n: int) -> float:
 
     if n >= 0:
         return (x + n * avg) / (n + 1)
+
+
+# Prints a string 'str' to a file 'f'
+def fprintf(s: str, f):
+    print(s, file = f)
 
 
 def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
@@ -112,7 +118,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
 
         # Test if the header is correct and expected
         if contents[0][0] != 'Frame' or contents[0][1] != ' Time (ms)':
-            print('ERROR: Unexpected headers!', file = rout)
+            fprintf('ERROR: Unexpected headers!', rout)
             return
 
         # Append new columns
@@ -130,11 +136,10 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
         stutter_samples = 0
         smooth_samples = 0
         extra_total_time = 0
-        fps_min = 20000.0
+        fps_large_const = 90000.0
+        fps_min = fps_large_const
         fps_avg = 0.0
         fps_avg_smooth = 0.0
-        # TODO Fix perceived
-        # fps_avg_perceived = 0.0
         fps_max = 0.0
 
         # Computation of five extra rows
@@ -164,7 +169,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
                 fps_avg_smooth = \
                     moving_average(fps_avg_smooth, frame_rate, sample_n)
             # Compute fps metrics
-            assert frame_rate < 20000.0
+            assert frame_rate < fps_large_const
             fps_max = max(frame_rate, fps_max)
             fps_min = min(frame_rate, fps_min)
             fps_avg = moving_average(fps_avg, frame_rate, sample_n)
@@ -184,43 +189,38 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
     overall_fps_avg_diff_ns = (fps_avg_smooth / fps_avg - 1.0) * 100.0
 
     # Print the results to rout
-    print('<Results>', file = rout)
-    print('\tStutter margin\t: {0:.3f} [ms]'.format(stutter_margin),
-          file = rout)
-    print('\n\tFrame Rate Min\t: {0:.3f} [fps]'.format(fps_min), file = rout)
-    print('\tFrame Rate Max\t: {0:.3f} [fps]'.format(fps_max), file = rout)
-    print('\tFrame Rate Avg Normal [N]\t: {0:.3f} [fps]'.format(
-            fps_avg), file = rout)
-    print('\tFrame Rate Avg Smooth [S]\t: {0:.3f} [fps]'.format(
-            fps_avg_smooth), file = rout)
-    print('\tFrame Rate Avg Diff[N, S]\t: {0:.3f}%'.format(
-            overall_fps_avg_diff_ns), file = rout)
-    print('\n\tStutter samples\t: {0}'.format(stutter_samples), file = rout)
-    print('\tSmooth samples\t: {0}'.format(smooth_samples), file = rout)
-    print('\tTotal samples\t: {0}'.format(total_samples), file = rout)
-    print('\tExtra time\t: {0:.3f} [ms]'.format(extra_total_time), file = rout)
-    print('\tTotal time\t: {0:.3f} [ms]'.format(contents[-1][1]), file = rout)
-    print('\n\tOverall smoothness\t: {0:.3f}%'.format(
-            overall_smoothness), file = rout)
-    print('\tOverall stutter\t\t: {0:.3f}%'.format(overall_stutter),
-          file = rout)
-    print('\tOverall extra time\t: {0:.3f}%'.format(
-            overall_extra_time), file = rout)
+    fprintf('<Results>', rout)
+    fprintf('\tStutter margin\t: {0:.3f} [ms]'.format(stutter_margin), rout)
+    fprintf('\n\tFrame Rate Min\t: {0:.3f} [fps]'.format(fps_min), rout)
+    fprintf('\tFrame Rate Max\t: {0:.3f} [fps]'.format(fps_max), rout)
+    fprintf('\tFrame Rate Avg Normal [N]\t: {0:.3f} [fps]'.format(fps_avg),
+            rout)
+    fprintf('\tFrame Rate Avg Smooth [S]\t: {0:.3f} [fps]'
+            .format(fps_avg_smooth), rout)
+    fprintf('\tFrame Rate Avg Diff[N, S]\t: {0:.3f}%'
+            .format(overall_fps_avg_diff_ns), rout)
+    fprintf('\n\tStutter samples\t: {0}'.format(stutter_samples), rout)
+    fprintf('\tSmooth samples\t: {0}'.format(smooth_samples), rout)
+    fprintf('\tTotal samples\t: {0}'.format(total_samples), rout)
+    fprintf('\tExtra time\t: {0:.3f} [ms]'.format(extra_total_time), rout)
+    fprintf('\tTotal time\t: {0:.3f} [ms]'.format(contents[-1][1]), rout)
+    fprintf('\n\tOverall smoothness\t: {0:.3f}%'.format(overall_smoothness),
+            rout)
+    fprintf('\tOverall stutter\t\t: {0:.3f}%'.format(overall_stutter), rout)
+    fprintf('\tOverall extra time\t: {0:.3f}%'.format(overall_extra_time), rout)
 
     # Print the smoothness rating to rout
     ovc = clamp(overall_stutter, SR_Min, SR_Max)
     rmax = len(SR_Verbal)
     rc = clamp(int(math.ceil(math.log(ovc, 2))) + 3, 0, rmax)
     rs_ = '\tOverall rating<v:{0}>\t: {1}, {2} of {3}\n'
-    print(rs_.format(SR_Version, SR_Verbal[rc], rmax - rc, rmax), file = rout)
+    fprintf(rs_.format(SR_Version, SR_Verbal[rc], rmax - rc, rmax), rout)
 
     # Write out the analyzed file data
     out_name = remove_extension(name) + '_fpa.' + get_extension(name)
-    with open(out_name, 'w') as fout:
+    with open(out_name, 'w', encoding = "utf-8") as fout:
         writer = csv.writer(fout, delimiter = ',')
-
-        for e_ in contents:
-            writer.writerow(e_)
+        writer.writerows(contents)
 
     print('<Info>\tAnalysis completed')
 
@@ -228,29 +228,27 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
 # cProfile.run('analyze("sample.csv")')
 if __name__ == "__main__":
     try:
-        # If the user provided one parameter it should be the name of the file
-        # to analyze
+        # One parameter -> Name of the file to analyze
         if len(sys.argv) == 2:
             analyze(sys.argv[1])
-        # If the user provided two parameter it should be the name of the file
-        # to analyze and the stutter margin
+        # Two parameters -> Name of the file to analyze, Stutter margin
         elif len(sys.argv) == 3:
             sm = float(sys.argv[2])
             if Stutter_Margin_Min < sm < Stutter_Margin_Max:
                 analyze(sys.argv[1], sm)
             else:
-                print('stutter_margin should be on ]{0}, {1}['.format(
-                        Stutter_Margin_Min, Stutter_Margin_Max))
-        # If the user provided two parameter it should be the name of the file
-        # to analyze, the stutter margin and the results output file name
+                print('stutter_margin should be on ]{0}, {1}['
+                      .format(Stutter_Margin_Min, Stutter_Margin_Max))
+        # Three parameters -> Name of the file to analyze, Stutter margin,
+        # Results output file name
         elif len(sys.argv) == 4:
             sm = float(sys.argv[2])
             if Stutter_Margin_Min < sm < Stutter_Margin_Max:
                 analyze(sys.argv[1], sm, open(sys.argv[3], 'w'))
             else:
-                print('stutter_margin should be on ]{0}, {1}['.format(
-                        Stutter_Margin_Min, Stutter_Margin_Max))
-        # User did not provide a required number of arguments
+                print('stutter_margin should be on ]{0}, {1}['
+                      .format(Stutter_Margin_Min, Stutter_Margin_Max))
+        # Less than one parameter -> Print help
         else:
             print(Syntax_Help.format(os.path.basename(sys.argv[0])))
 
