@@ -104,7 +104,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
         reader = csv.reader(fin, delimiter = ',')
         contents = []
 
-        # Convert string data to numerical data on the fly removing extra
+        # Convert string data to numerical data on the fly while removing extra
         # spaces
         for row in reader:
             irow = []
@@ -148,7 +148,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
             prev = contents[i - 1]
             curr = contents[i]
 
-            # Computes needed values
+            # Compute needed values
             frame_time = curr[1] - prev[1]
             frame_rate = 1000 / frame_time
             frame_delta = frame_time - prev[2]
@@ -159,7 +159,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
 
             sample_n = i - 2
 
-            # Count sample of each type
+            # Count samples of each type
             if visible_stutter == 1:
                 stutter_samples += 1
                 extra_total_time += extra_time_val
@@ -168,6 +168,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
                 smooth_samples += 1
                 fps_avg_smooth = \
                     moving_average(fps_avg_smooth, frame_rate, sample_n)
+
             # Compute fps metrics
             assert frame_rate < fps_large_const
             fps_max = max(frame_rate, fps_max)
@@ -181,14 +182,14 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
             curr.append(extra_time)
             curr.append(visible_stutter)
 
-    # Computes other overall parameters of the samples analyzed
+    # Compute overall parameters of analyzed samples
     total_samples = stutter_samples + smooth_samples
     overall_smoothness = smooth_samples * 100.0 / total_samples
     overall_stutter = stutter_samples * 100.0 / total_samples
     overall_extra_time = extra_total_time * 100.0 / contents[-1][1]
     overall_fps_avg_diff_ns = (fps_avg_smooth / fps_avg - 1.0) * 100.0
 
-    # Print the results to rout
+    # Print results to rout
     fprintf('<Results>', rout)
     fprintf('\tStutter margin\t: {0:.3f} [ms]'.format(stutter_margin), rout)
     fprintf('\n\tFrame Rate Min\t: {0:.3f} [fps]'.format(fps_min), rout)
@@ -216,7 +217,7 @@ def analyze(name = '', stutter_margin = 2.0, rout = sys.stdout):
     rs_ = '\tOverall rating<v:{0}>\t: {1}, {2} of {3}\n'
     fprintf(rs_.format(SR_Version, SR_Verbal[rc], rmax - rc, rmax), rout)
 
-    # Write out the analyzed file data
+    # Write the analyzed CSV
     out_name = remove_extension(name) + '_fpa.' + get_extension(name)
     with open(out_name, 'w', encoding = "utf-8") as fout:
         writer = csv.writer(fout, delimiter = ',')
@@ -240,7 +241,7 @@ if __name__ == "__main__":
                 print('stutter_margin should be on ]{0}, {1}['
                       .format(Stutter_Margin_Min, Stutter_Margin_Max))
         # Three parameters -> Name of the file to analyze, Stutter margin,
-        # Results output file name
+        # Results file name
         elif len(sys.argv) == 4:
             sm = float(sys.argv[2])
             if Stutter_Margin_Min < sm < Stutter_Margin_Max:
